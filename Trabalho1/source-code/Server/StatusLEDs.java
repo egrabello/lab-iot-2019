@@ -29,7 +29,7 @@ import com.pi4j.io.gpio.RaspiPin;
  *  0        OFF     OFF
  *  1        ON      OFF
  *  2        OFF     ON
- *  4        BLINK   BLINK
+ *  3        BLINK   BLINK
  *
  * @author Egberto Rabello
  */
