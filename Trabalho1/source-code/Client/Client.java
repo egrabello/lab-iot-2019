@@ -28,13 +28,54 @@ import org.eclipse.californium.core.coap.MediaTypeRegistry;
 
 /**
  * This class implements a Command Line Interface (CLI) to set up a CoAp
- * client that make requests to observe a remote resources (DHT11 sensors
- * and LEDs).
+ * client that make requests to observe a remote resources (Temperature,
+ * Humidity and LEDs).
  *
  * @author Egberto Rabello
  */
 public class Client {
-
+	
+	// Variables (measures)
+	static Float temperature = 0.0f;
+	static Float humidity = 0.0f;
+	static Float temperatureThreshold;
+	static Float humidityThreshold;
+			
+	// Method to set status on output server and console
+	static void setStatus(CoapClient output){
+		
+		int status;
+		
+		// Apply business rules
+		if ((temperature > temperatureThreshold) && (humidity > humidityThreshold)) {
+			status = 3;
+		} else if (humidity > humidityThreshold) {
+			status = 2;
+		} else if (temperature > temperatureThreshold) {
+			status = 1;
+		} else {
+			status = 0;
+		}
+		
+		// Create Message
+		String outputString = "Temperature= " + String.format("%.02f", temperature) + "*,  Humidity= " + String.format("%.02f", humidity) + "%,  ";
+		switch (status) {
+            case 0:  outputString += "Red LED= OFF,  Green LED= OFF";
+                     break;
+            case 1:  outputString += "Red LED= ON,  Green LED= OFF";
+                     break;
+            case 2:  outputString += "Red LED= OFF,  Green LED= ON";
+                     break;
+            case 3:  outputString += "Red LED= BLINK,  Green LED= BLINK";
+                     break;
+		}
+		
+		// Display Message on console
+		output.put(Integer.toString(status), MediaTypeRegistry.TEXT_PLAIN);
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		System.out.println(">> " + dateFormat.format(new Date()) + " --> " + outputString);
+	}
+	
 	// Main method
 	public static void main(String[] args) throws Exception {
 		
@@ -65,12 +106,13 @@ public class Client {
 			ledsPort = reader.readLine();
 		}	
 		System.out.print(">> Temperature Threshold: ");
-		final Float temperatureThreshold = Float.parseFloat(reader.readLine());
+		temperatureThreshold = Float.parseFloat(reader.readLine());
 		System.out.print(">> Humidity Threshold: ");
-		final Float humidityThreshold = Float.parseFloat(reader.readLine());
+		humidityThreshold = Float.parseFloat(reader.readLine());
 		
 		// Create CoAP clients
-		final CoapClient sensorClient = new CoapClient("coap://" + sensorHost + ":" + sensorPort + "/dht11");
+		final CoapClient tempClient = new CoapClient("coap://" + sensorHost + ":" + sensorPort + "/temperature");
+		final CoapClient humiClient = new CoapClient("coap://" + sensorHost + ":" + sensorPort + "/humidity");
 		final CoapClient ledsClient = new CoapClient("coap://" + ledsHost + ":" + ledsPort + "/leds");
 		
 		// Display disclaimer on console
@@ -78,64 +120,51 @@ public class Client {
 		System.out.println(">> CoAP client started!");
 		System.out.println(">> Press CTRL-C to exit.");
 		
-		// Establish observe relation to sensor
-		sensorClient.observeAndWait(new CoapHandler() {
+		// Establish observe relation to temperature
+		tempClient.observeAndWait(new CoapHandler() {
 			
-			// Variables (measures)
-			Float temperature;
-			Float humidity;
-			
-			// Method to display status on console with timestamp
-			void cliOutput(String text) {
-				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				System.out.println(">> " + dateFormat.format(new Date()) + " --> " + text);
-			}
-			
-			// Method to set status on output server and console
-			void setStatus(int status){
-				
-				String outputString = "Temperature= " + String.format("%.02f", temperature) + "*,  Humidity= " + String.format("%.02f", humidity) + "%,  ";
-				switch (status) {
-		            case 0:  outputString += "Red LED= OFF,  Green LED= OFF";
-		                     break;
-		            case 1:  outputString += "Red LED= ON,  Green LED= OFF";
-		                     break;
-		            case 2:  outputString += "Red LED= OFF,  Green LED= ON";
-		                     break;
-		            case 3:  outputString += "Red LED= BLINK,  Green LED= BLINK";
-		                     break;
-				}
-				
-				ledsClient.put(Integer.toString(status), MediaTypeRegistry.TEXT_PLAIN);
-				cliOutput(outputString);
-			}
-			
-			// Define action taken when observed resource changes
+			// Define action taken when observed temperature changes
 			@Override
 			public void onLoad(CoapResponse response) {
 
 				// Handle response payload
-				String[] readings = response.advanced().getPayloadString().split("#");
-				if (readings.length == 2) {
-					temperature = Float.parseFloat(readings[0]);
-					humidity = Float.parseFloat(readings[1]);
-					if ((temperature > temperatureThreshold) && (humidity > humidityThreshold)) {
-						setStatus(3);
-					} else if (humidity > humidityThreshold) {
-						setStatus(2);
-					} else if (temperature > temperatureThreshold) {
-						setStatus(1);
-					} else {
-						setStatus(0);
-					}
+				String readings = response.advanced().getPayloadString();
+				if (Float.parseFloat(readings) != temperature) {
+					temperature = Float.parseFloat(readings);
+					setStatus(ledsClient);
 				}
+				
 				
 			}
 
 			// Handle connection error to output server
 			@Override
 			public void onError() {
-				cliOutput("Erro na conexao com o servidor");
+				System.out.println(">> Erro na conexao com o servidor");
+			}
+		});
+		
+		// Establish observe relation to humidity
+		humiClient.observeAndWait(new CoapHandler() {
+			
+			// Define action taken when observed humidity changes
+			@Override
+			public void onLoad(CoapResponse response) {
+
+				// Handle response payload
+				String readings = response.advanced().getPayloadString();
+				if (Float.parseFloat(readings) != humidity) {
+					humidity = Float.parseFloat(readings);
+					setStatus(ledsClient);
+				}
+				
+				
+			}
+
+			// Handle connection error to output server
+			@Override
+			public void onError() {
+				System.out.println(">> Erro na conexao com o servidor");
 			}
 		});
 		
