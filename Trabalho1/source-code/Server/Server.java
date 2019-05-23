@@ -19,6 +19,7 @@ package br.ufrj.cos.iotlab2019.server;
 import org.eclipse.californium.core.CoapServer;
 
 import br.ufrj.cos.iotlab2019.server.resources.HumidityResource;
+import br.ufrj.cos.iotlab2019.server.resources.SensorDHT11;
 import br.ufrj.cos.iotlab2019.server.resources.StatusLEDsResource;
 import br.ufrj.cos.iotlab2019.server.resources.TemperatureResource;
 
@@ -58,14 +59,17 @@ public class Server extends CoapServer {
 		}
 			
 		if (opMode != 2) {
+			// create a sensor object
+			SensorDHT11 sensor = new SensorDHT11();
+			
 			// add a "temperature" resource of TemperatureResource type as observable
-			TemperatureResource tempRes = new TemperatureResource("temperature");
+			TemperatureResource tempRes = new TemperatureResource("temperature", sensor);
 			tempRes.setObservable(true);
 			tempRes.getAttributes().setObservable();
 			server.add(tempRes);
 			
 			// add a "humidity" resource of HumidityResource type as observable
-			HumidityResource humiRes = new HumidityResource("humidity");
+			HumidityResource humiRes = new HumidityResource("humidity", sensor);
 			humiRes.setObservable(true);
 			humiRes.getAttributes().setObservable();
 			server.add(humiRes);

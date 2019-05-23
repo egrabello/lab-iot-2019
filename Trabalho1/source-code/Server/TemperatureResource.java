@@ -16,8 +16,6 @@
  */
 package br.ufrj.cos.iotlab2019.server.resources;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.Timer;
 import java.util.TimerTask;
 import org.eclipse.californium.core.CoapResource;
@@ -27,18 +25,18 @@ import org.eclipse.californium.core.server.resources.CoapExchange;
 
 /**
  * This class is used to define a new resource type (Temperature)
- * based on DHT11 readings using the GPIO interface of a Raspberry
- * Pi model B. The sensor readings are collected via Python script.
+ * based on DHT11 sensor readings.
  *
  * @author Egberto Rabello
  */
 public class TemperatureResource extends CoapResource {
 	
 	// Constructor
-	public TemperatureResource(String name) {
+	public TemperatureResource(String name, SensorDHT11 sensor) {
 		
 		// Define resource name
 		super(name);
+		sensorDHT11 = sensor;
 		
 		// Create a Timer object to get DHT11 readings each 3 seconds
 		Timer timer = new Timer();
@@ -47,6 +45,7 @@ public class TemperatureResource extends CoapResource {
 		
 	// Variables
 	private String measure = "";
+	private SensorDHT11 sensorDHT11;
 	
 	// Method to update readings
 	private class UpdateTask extends TimerTask {
@@ -54,34 +53,14 @@ public class TemperatureResource extends CoapResource {
 		// Private Variables
 		private CoapResource mCoapRes;
 		
-		// Private method to read sensor data using a Python script
-		private String getSensorData() {
-			String sensorData = null;
-			try {
-				Runtime rt = Runtime.getRuntime();
-				// Execute script dht.py with two arguments
-				// - 1: sensor model (11)
-				// - 2: GPIO pin (4)
-				Process p = rt.exec("python dht.py 11 4");
-				BufferedReader bri = new BufferedReader(new InputStreamReader(p.getInputStream()));
-				sensorData = bri.readLine();
-				bri.close();
-				p.waitFor();
-				
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			// This method returns NULL if no data is available (fail reading data)
-			return sensorData;
-		}
-		
+		// Method to update readings
 		public UpdateTask(CoapResource coapRes) {
 		mCoapRes = coapRes;
 		}
 		
 		// Custom method to update resource data (measure)
 		@Override public void run() {
-			String newMeasure = getSensorData().split("#")[0];
+			String newMeasure = sensorDHT11.getTemperature();
 			
 			if (!newMeasure.equals(measure) && (newMeasure != null)) {
 				measure = newMeasure;
