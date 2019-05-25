@@ -1,0 +1,20 @@
+#Deployment Plugin Project File
+#Sat May 25 15:35:57 WEST 2019
+build.ant.name=<.>/resources/dp/coap_server_build.xml
+build.dp.file=<.>/resources/dp/coap_server.dp
+build.location=
+bundles.0.bundle_path=/Users/egberto/Downloads/Lab-iot/exports/plugins/br.ufrj.cos.iotlab2019.coap_server_1.0.0.201905251533.jar
+bundles.0.customizer=false
+bundles.0.headers.count=0
+bundles.0.missing=false
+bundles.0.name=bundles/br.ufrj.cos.iotlab2019.coap_server_1.0.0.201905251533.jar
+bundles.0.symbolic_name=br.ufrj.cos.iotlab2019.coap_server
+bundles.0.version=1.0.0.201905251533
+bundles.count=1
+certificates.count=0
+general.signbundles=false
+headers.other.headers=
+headers.symbolic.name=coap_server
+headers.version=1.0.0
+resources.count=0
+

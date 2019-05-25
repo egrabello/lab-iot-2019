@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Lab IoT CoAP Server
+Bundle-SymbolicName: br.ufrj.cos.iotlab2019.coap_server
+Bundle-Version: 1.0.0.qualifier
+Automatic-Module-Name: br.ufrj.cos.iotlab2019.server_ogsi
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-ClassPath: libs/californium-core-1.0.4.jar,
+ libs/element-connector-1.0.4.jar,
+ libs/pi4j-core-javadoc.jar,
+ libs/pi4j-core-sources.jar,
+ libs/pi4j-core.jar,
+ .
+Import-Package: org.osgi.service.component;version="1.3.0",
+ org.slf4j;version="1.7.25"
+Service-Component: OSGI-INF/component.xml
